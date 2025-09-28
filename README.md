@@ -128,10 +128,9 @@ with MyDataContext(train_data, val_data) as data_ctx:
     with MyClassifierContext(args.model_name, labels, cfg) as classifier:
         collator  = MyCollator(classifier.tokenizer, max_length=cfg.max_length)
         evaluator = MyEvaluator(labels)
-        trainer   = MyTrainer(config=cfg)
+        trainer   = MyTrainer(classifier=classifier, config=cfg)
 
         results = trainer.train(
-            classifier=classifier,
             train_data=data_ctx.get_train_data(),
             val_data=data_ctx.get_val_data(),
             collator=collator,
@@ -188,10 +187,10 @@ Test the **interfaces** so every implementation is held to the same bar.
 
 ```python
 # tests/test_trainer_contract.py
-from interfaces import Trainer, Collator, Evaluator, Classifier
+from interfaces import Trainer, Collator, Evaluator
 
-def test_trainer_runs(trainer: Trainer, clf: Classifier, coll: Collator, eval_: Evaluator, data):
-    history = trainer.train(clf, data["train"], data["val"], coll, eval_, epochs=2)
+def test_trainer_runs(trainer: Trainer, coll: Collator, eval_: Evaluator, data):
+    history = trainer.train(data["train"], data["val"], coll, eval_, epochs=2)
     assert "final_accuracy" in history
 ```
 

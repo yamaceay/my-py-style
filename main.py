@@ -26,10 +26,9 @@ def run_training_simulation(args, cfg: "RuntimeConfig") -> dict[str, Any]:
         with MyClassifierContext(args.model_name, labels, cfg) as classifier:
             collator = MyCollator(classifier.tokenizer, max_length=cfg.max_length)
             evaluator = MyEvaluator(labels)
-            trainer = MyTrainer(config=cfg)
+            trainer = MyTrainer(classifier=classifier, config=cfg)
             
             training_results = trainer.train(
-                classifier=classifier,
                 train_data=data_ctx.get_train_data(),
                 val_data=data_ctx.get_val_data(),
                 collator=collator,

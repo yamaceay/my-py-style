@@ -89,11 +89,11 @@ class MyCollator(Collator):
 
 @dataclass(frozen=True)
 class MyTrainer(Trainer):
+    classifier: Classifier
     config: "RuntimeConfig"
-    
+
     def train(
-        self, 
-        classifier: Classifier,
+        self,
         train_data: list[dict], 
         val_data: list[dict], 
         collator: Collator, 
@@ -112,8 +112,8 @@ class MyTrainer(Trainer):
         
         for epoch in range(epochs):
             logger.info("epoch_start", extra={"epoch": epoch + 1, "total_epochs": epochs})
-            train_loss = self._train_epoch(classifier, train_data, collator, epoch)
-            val_metrics = self._validate_epoch(classifier, val_data, collator, evaluator, epoch)
+            train_loss = self._train_epoch(self.classifier, train_data, collator, epoch)
+            val_metrics = self._validate_epoch(self.classifier, val_data, collator, evaluator, epoch)
             if val_metrics["accuracy"] > best_accuracy:
                 best_accuracy = val_metrics["accuracy"]
                 logger.info("new_best_model", extra={"epoch": epoch + 1, "accuracy": best_accuracy})
