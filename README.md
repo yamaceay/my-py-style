@@ -34,12 +34,16 @@ The code should read like prose—types and method names tell the story. Comment
 ## Project Map
 
 ```
-interfaces.py  # ABCs: Collator, Evaluator, EvaluationResult, Classifier, Trainer
-config.py      # RuntimeConfig + canonicalize_config + seed utils + mock tokenizer/model
-core.py        # Concrete classes: MyCollator, MyEvaluator, MyEvaluationResult, MyTrainer, MyClassifier
-contexts.py    # Context managers for classifier + data
-cli.py         # Single argument parser + logging setup + arg validation
-main.py        # Wiring: parse → config → contexts → collate/classify/evaluate/train
+interfaces.py  # ABCs: Processor, Handler, Repository, Service
+config.py      # AppConfig + create_config + canonicalization
+core.py        # Concrete classes: DefaultProcessor, DefaultHandler, DefaultRepository, DefaultService
+contexts.py    # Context managers: ServiceContext, DataContext
+cli.py         # Argument parser + logging setup + validation
+main.py        # Wiring: parse → config → contexts → process → execute
+pyproject.toml # Modern Python packaging configuration
+requirements.txt # Dependencies
+.gitignore     # Comprehensive ignore patterns
+README.md      # Project documentation
 ```
 
 ---
@@ -59,35 +63,108 @@ This approach prioritizes **explicitness**, **composition**, and **predictable c
 ### Architecture at a Glance
 
 ```
-CLI (args) ──▶ canonicalize_config() ──▶ RuntimeConfig
-                                  └─▶ MyDataContext ─────▶ train/val batches
-                                  └─▶ MyClassifierContext ─▶ MyClassifier (model, tokenizer)
-                                                           └─▶ MyCollator(tokenizer, max_length).collate(batch)
-                                                           └─▶ MyEvaluator(labels).evaluate(preds, targets)
-                                                           └─▶ MyTrainer(config).train(..., epochs)
+CLI (args) ──▶ create_config() ──▶ AppConfig
+                              └─▶ DataContext ─────▶ data loading/cleanup
+                              └─▶ ServiceContext ──▶ DefaultService (repository, processor)
+                                                   └─▶ DefaultProcessor(name).process(data)
+                                                   └─▶ DefaultRepository().save(entity)
+                                                   └─▶ DefaultHandler(service).handle(request)
 ```
 
 - **ABCs define the contracts** (`interfaces.py`).
-- **Classes bind static state at init** (e.g., `MyCollator(tokenizer, max_length)`).
-- **Methods take only the changing parts** (`collate(batch)`, `evaluate(preds, targets)`, `classify(input_ids)`).
-- **Contexts make lifecycles obvious** (`with MyClassifierContext(...) as classifier:`).
+- **Classes bind static state at init** (e.g., `DefaultProcessor(name)`, `DefaultService(repository, processor)`).
+- **Methods take only the changing parts** (`process(data)`, `handle(request)`, `execute(params)`).
+- **Contexts make lifecycles obvious** (`with ServiceContext(...) as service:`, `with DataContext(...) as data:`).
 
 ---
 
 ## Quick Start
 
-### Generate a New Project
+### Step-by-Step Project Creation
+
+**1. Clone this repository**
+```bash
+git clone https://github.com/yamaceay/my-py-style.git
+cd my-py-style
+```
+
+**2. Create your first project using the Makefile**
+```bash
+# Basic CLI tool project
+make build project=my_awesome_tool
+
+# API server with custom author
+make build project=my_api type=api_server author="Your Name"
+
+# Data pipeline with description
+make build project=data_processor type=data_pipeline description="Advanced data processing pipeline"
+```
+
+**3. Navigate to your new project and test it**
+```bash
+cd my_awesome_tool
+python main.py run --verbose
+```
+
+### Makefile Reference
+
+The included Makefile provides convenient commands for project management:
+
+#### `make build` - Project Scaffolding
+Generate new projects with Go-ish Python patterns:
 
 ```bash
-# Create a new CLI tool
-python3 scaffold.py my_tool --type cli_tool --author "Your Name"
+# Required parameter
+make build project=<project_name>
 
-# Create an ML framework
-python3 scaffold.py ml_project --type ml_framework --description "ML Pipeline"
+# Optional parameters
+make build project=my_app type=cli_tool              # Project type
+make build project=my_app author="Jane Doe"           # Author name
+make build project=my_app description="My awesome app" # Description
+make build project=my_app target_dir=/path/to/dir     # Custom target directory
 
-# Minimal project (no logging/contexts)
-python3 scaffold.py simple_app --no-logging --no-context-managers
+# Feature flags
+make build project=simple_app no_logging=1           # Disable logging
+make build project=simple_app no_cli=1               # Disable CLI
+make build project=simple_app no_context_managers=1  # Disable contexts
 ```
+
+**Project types available:**
+- `cli_tool` (default) - Command-line applications
+- `api_server` - REST API servers
+- `data_pipeline` - Data processing workflows
+- `ml_framework` - Machine learning applications
+
+#### `make install` - Development Setup
+Installs GitHub CLI and Copilot CLI extension for AI assistance:
+
+```bash
+make install
+```
+
+This command:
+- Installs GitHub CLI if not present
+- Authenticates with GitHub (interactive)
+- Installs GitHub Copilot CLI extension
+- Sets up AI-powered development tools
+
+#### `make prompt` - AI Transformation Guide
+Displays the Go-ish Python transformation prompt:
+
+```bash
+make prompt  # Shows prompt and copies to clipboard
+```
+
+Use this prompt with Claude, ChatGPT, or other AI tools to transform existing Python projects.
+
+#### `make sync-docs` - Documentation Sync
+Synchronizes documentation between prompt.md and README.md:
+
+```bash
+make sync-docs
+```
+
+Runs automatically via GitHub Actions when files change.
 
 ### Design Choices (why classes, not Protocols)
 
@@ -127,30 +204,31 @@ Static dependencies (tokenizer, labels, device, paths) go into `__init__`. Metho
 ```python
 # ✅ Good: Pure static deps → use dataclass
 @dataclass(frozen=True)
-class MyCollator(Collator):
-    tokenizer: MockTokenizer  # Static dependency
-    max_length: int          # Static configuration
+class DefaultProcessor(Processor):
+    name: str               # Static dependency
+    timeout: int           # Static configuration
     
-    def collate(self, batch: list[dict]) -> dict[str, Any]:  # Dynamic input
-        return self.tokenizer.tokenize(batch, max_length=self.max_length)
+    def process(self, data: Any) -> Any:  # Dynamic input
+        return {"processed": True, "data": data, "processor": self.name}
 
 # ✅ Good: Dynamic initialization → use regular __init__
-class MyClassifier(Classifier):
-    def __init__(self, model_name: str, labels: list[str], config: RuntimeConfig):
-        self.model_name = model_name
-        self.labels = labels
+class DefaultService(Service):
+    def __init__(self, repository: Repository, processor: Processor, config: AppConfig):
+        self.repository = repository
+        self.processor = processor
         self.config = config
         # Dynamic initialization based on dependencies
-        self.tokenizer = self._load_tokenizer(model_name)  # Depends on model_name
-        self.model = self._load_model(model_name, len(labels))  # Depends on both
+        self.cache = self._setup_cache(config.cache_size)  # Depends on config
+        self.validator = self._create_validator(processor.name)  # Depends on processor
     
-    def classify(self, input_ids: list[int]) -> int:  # Dynamic input only
-        return self.model.predict(input_ids)
+    def execute(self, params: Any) -> Any:  # Dynamic input only
+        processed = self.processor.process(params)
+        return self.repository.save(processed)
 
 # ❌ Bad: Dependencies passed to every method call
-class BadCollator:
-    def collate(self, batch: list[dict], tokenizer, max_length) -> dict:
-        return tokenizer.tokenize(batch, max_length=max_length)
+class BadProcessor:
+    def process(self, data: Any, name: str, timeout: int) -> Any:
+        return {"processed": True, "data": data, "processor": name}
 ```
 
 ### Rule #2: Plug-and-play polymorphism over branching
@@ -159,20 +237,20 @@ Choose the concrete class once (CLI/factory/context), then call the common metho
 
 ```python
 # ✅ Good: Polymorphic selection
-if args.task_type == "classifier":
-    context_mgr = ClassifierContext(model_name, labels, cfg)
-elif args.task_type == "sentiment":
-    context_mgr = SentimentContext(model_name, labels, cfg)
+if args.command == "process":
+    context_mgr = ProcessingContext(config)
+elif args.command == "serve":
+    context_mgr = ServerContext(config)
 
-with context_mgr as task:
-    result = task.run(data)  # Same interface, different behavior
+with context_mgr as service:
+    result = service.execute(data)  # Same interface, different behavior
 
 # ❌ Bad: Runtime branching everywhere
-def process_data(data, task_type, model_name, labels):
-    if task_type == "classifier":
-        # classifier logic here
-    elif task_type == "sentiment":
-        # sentiment logic here
+def handle_request(data, command, config):
+    if command == "process":
+        # processing logic here
+    elif command == "serve":
+        # server logic here
 ```
 
 ### Rule #3: One config to rule them all
@@ -182,16 +260,16 @@ Build `RuntimeConfig` once at the top; pass it down. No config files. No hidden 
 ```python
 # ✅ Good: Single config source
 @dataclass(frozen=True)
-class RuntimeConfig:
-    device: str
-    model_name: str
-    max_length: int
-    epochs: int
+class AppConfig:
+    app_name: str
+    output_dir: Path
+    verbose: bool
+    timeout: int
 
 def main():
     cfg = parse_args_to_config(args)  # Build once
-    with ClassifierContext(cfg.model_name, labels, cfg) as classifier:
-        trainer = MyTrainer(config=cfg)  # Pass down
+    with ServiceContext(cfg) as service:
+        processor = DefaultProcessor(name=cfg.app_name)  # Pass down
 ```
 
 ### Rule #4: Context managers for lifecycle
@@ -200,13 +278,15 @@ Heavy resources must be used with `with ...:`; construction and cleanup are expl
 
 ```python
 # ✅ Good: Explicit lifecycle management
-class ClassifierContext(AbstractContextManager):
-    def __enter__(self) -> MyClassifier:
-        self.classifier = MyClassifier(self.model_name, self.labels, self.cfg)
-        return self.classifier
+class ServiceContext(AbstractContextManager):
+    def __enter__(self) -> DefaultService:
+        self.repository = DefaultRepository()
+        self.processor = DefaultProcessor(name=self.config.app_name)
+        self.service = DefaultService(self.repository, self.processor)
+        return self.service
     
     def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
-        self.classifier.cleanup()  # Explicit cleanup
+        self.service.cleanup()  # Explicit cleanup
         return False
 ```
 
@@ -216,14 +296,14 @@ Library code logs with context; CLI may print final user-facing summaries.
 
 ```python
 # ✅ Good: Structured logging with context
-logger.info("training_complete", extra={
-    "final_accuracy": accuracy,
-    "epochs": epochs,
-    "model": model_name
+logger.info("processing_complete", extra={
+    "records_processed": count,
+    "duration_ms": elapsed,
+    "processor": processor_name
 })
 
 # CLI summary (user-facing)
-print(f"Training completed! Final accuracy: {accuracy:.3f}")
+print(f"Processing completed! Records processed: {count}")
 ```
 
 ---
@@ -323,56 +403,220 @@ from actual_module import real_function  # Runtime imports
 
 ---
 
-## Project Scaffolder
+## Project Scaffolder Tutorial
 
-The included `scaffold.py` generates new projects following all Go-ish patterns automatically.
+The included scaffolder generates complete, production-ready projects following Go-ish Python patterns automatically.
 
-### Features
+### Complete Walkthrough
 
-**Complete Project Generation**
-- Modular architecture with proper separation of concerns
-- TYPE_CHECKING compliance and forward references
-- Interface-based design with ABC contracts
-- Context manager support for resource lifecycle
-- Structured logging with consistent patterns
-- CLI integration with argument parsing
-
-**Flexible Configuration**
-- **Project Types**: ML framework, API server, CLI tool, data pipeline
-- **Optional Features**: Logging, CLI interface, context managers
-- **Customizable**: Author, description, target directory
-
-### Usage
+#### 1. Create Your First CLI Tool
 
 ```bash
-# Basic project
-python3 scaffold.py my_project --type cli_tool
+# Generate a CLI tool project
+make build project=task_manager type=cli_tool author="Your Name"
+cd task_manager
 
-# ML framework with full features
-python3 scaffold.py ml_framework --type ml_framework --author "ML Engineer" \
-  --description "Advanced ML pipeline with Go-ish patterns"
+# Explore the generated structure
+ls -la
+# interfaces.py  core.py  contexts.py  cli.py  config.py  main.py
+# pyproject.toml  requirements.txt  .gitignore  README.md  tests/
 
-# Minimal project
-python3 scaffold.py simple_tool --no-logging --no-context-managers
-
-# API server
-python3 scaffold.py my_api --type api_server --target-dir /path/to/projects
+# Test the generated application
+python main.py run --verbose
+# Application completed successfully!
+# Result: {'processed': True, 'data': [], 'processor': 'task_manager'}
 ```
 
-### Generated Project Features
+#### 2. API Server Example
 
-**Architecture**
-- Clean module boundaries (`interfaces` → `core` → `contexts` → `main`)
-- Proper dependency injection through constructors
-- Context managers for resource lifecycle
-- Configuration management with immutable objects
+```bash
+# Generate an API server project
+make build project=user_api type=api_server description="User management API"
+cd user_api
 
-**Development Ready**
-- `pyproject.toml` for modern Python packaging
-- `requirements.txt` for dependencies
-- `.gitignore` with comprehensive patterns
-- Test directory structure
-- Comprehensive README with usage examples
+# The generated structure includes API-specific components
+python main.py process --output-dir ./api_output
+```
+
+#### 3. Data Pipeline Example
+
+```bash
+# Generate a data processing pipeline
+make build project=log_processor type=data_pipeline \
+  author="Data Team" description="Log analysis pipeline"
+cd log_processor
+
+# Test data processing
+python main.py run --verbose --output-dir ./processed_logs
+```
+
+#### 4. Minimal Project (No Extras)
+
+```bash
+# Generate minimal project without logging/contexts
+make build project=simple_calc no_logging=1 no_context_managers=1
+cd simple_calc
+
+# Check the simpler structure
+cat main.py  # Much simpler without contexts and logging
+```
+
+### Generated Architecture Deep Dive
+
+Every scaffolded project follows the same proven structure:
+
+#### Module Organization
+
+```
+project_name/
+├── interfaces.py     # ABC contracts (Processor, Handler, Repository, Service)
+├── core.py          # Concrete implementations with constructor injection
+├── contexts.py      # Resource lifecycle management (if enabled)
+├── cli.py           # Argument parsing and validation (if enabled)  
+├── config.py        # Immutable configuration objects
+├── main.py          # Application orchestration and entry point
+├── pyproject.toml   # Modern Python packaging
+├── requirements.txt # Dependency management
+├── .gitignore       # Comprehensive ignore patterns
+├── README.md        # Project-specific documentation
+└── tests/           # Test directory structure
+```
+
+#### Generated Components
+
+**Core Interfaces** (`interfaces.py`):
+```python
+class Processor(ABC):
+    @abstractmethod
+    def process(self, data: Any) -> Any: ...
+
+class Service(ABC):
+    @abstractmethod  
+    def execute(self, params: Any) -> Any: ...
+
+class Repository(ABC):
+    @abstractmethod
+    def save(self, entity: Any) -> bool: ...
+    
+    @abstractmethod
+    def find(self, identifier: str) -> Any: ...
+```
+
+**Concrete Implementations** (`core.py`):
+```python
+@dataclass(frozen=True)
+class DefaultProcessor(Processor):
+    name: str  # Static dependency
+    
+    def process(self, data: Any) -> Any:  # Dynamic input only
+        return {"processed": True, "data": data, "processor": self.name}
+
+@dataclass(frozen=True)  
+class DefaultService(Service):
+    repository: Repository  # Injected dependency
+    processor: Processor   # Injected dependency
+    
+    def execute(self, params: Any) -> Any:
+        processed = self.processor.process(params)
+        self.repository.save(processed)
+        return processed
+```
+
+**Context Management** (`contexts.py`):
+```python
+class ServiceContext(AbstractContextManager[DefaultService]):
+    def __enter__(self) -> DefaultService:
+        self.repository = DefaultRepository()
+        self.processor = DefaultProcessor(name=self.config.app_name)
+        self.service = DefaultService(self.repository, self.processor)
+        return self.service
+    
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+        # Automatic cleanup
+        return False
+```
+
+### Customization Options
+
+#### Project Types
+
+Each type generates appropriate components:
+
+- **`cli_tool`** (default): Command-line applications with argument parsing
+- **`api_server`**: REST API structure with request handling
+- **`data_pipeline`**: Data processing workflows with batch operations  
+- **`ml_framework`**: Machine learning applications with model management
+
+#### Feature Flags
+
+Control generated features:
+
+```bash
+# Disable specific features
+make build project=minimal_app no_logging=1      # No structured logging
+make build project=simple_app no_cli=1           # No argument parsing
+make build project=basic_app no_context_managers=1  # No resource management
+
+# Combine flags
+make build project=bare_app no_logging=1 no_cli=1 no_context_managers=1
+```
+
+#### Development Ready Features
+
+Every project includes:
+
+- **Modern packaging** with `pyproject.toml`
+- **Type checking** with proper forward references
+- **Testing structure** ready for pytest
+- **Git integration** with comprehensive `.gitignore`
+- **Documentation** with usage examples
+- **CLI integration** (if enabled) with validation
+
+### Advanced Usage Patterns
+
+#### Custom Project Location
+
+```bash
+# Generate in specific directory
+make build project=my_app target_dir=/path/to/workspace
+
+# Organize multiple projects
+mkdir -p ~/projects/go-ish-python
+make build project=project1 target_dir=~/projects/go-ish-python
+make build project=project2 target_dir=~/projects/go-ish-python
+```
+
+#### Development Workflow
+
+```bash
+# 1. Generate project
+make build project=analytics_tool type=data_pipeline
+
+# 2. Set up development environment
+cd analytics_tool
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+# 3. Run tests
+python -m pytest tests/
+
+# 4. Start development
+python main.py run --verbose
+```
+
+#### Integration with AI Tools
+
+```bash
+# Generate project for AI transformation
+make build project=legacy_converter type=cli_tool
+
+# Get transformation prompt
+make prompt
+
+# Use the prompt with Claude/ChatGPT to transform existing code
+# into the generated project structure
+```
 
 ---
 
@@ -428,34 +672,32 @@ For manual transformation of existing codebases:
 
 ## Detailed Examples
 
-### Example: ML Training Pipeline
+### Example: Data Processing Application
 
-The reference implementation demonstrates a complete ML training workflow:
+The reference implementation demonstrates a complete data processing workflow:
 
 ```python
-# Generated data → Context setup → Training loop → Evaluation
-def run_training_simulation(args, cfg: RuntimeConfig):
-    train_data, val_data = generate_simulation_data(args.data_size)
-    labels = ["positive", "negative", "neutral"]
+# CLI args → Context setup → Processing loop → Results
+def run_application(args, config: AppConfig):
+    logger.info("application_starting", extra={"command": args.command})
     
-    with MyDataContext(train_data, val_data) as data_ctx:
-        with MyClassifierContext(args.model_name, labels, cfg) as classifier:
+    with DataContext("default_source") as data_ctx:
+        with ServiceContext(config) as service:
             # Components use constructor injection
-            collator = MyCollator(classifier.tokenizer, max_length=cfg.max_length)
-            evaluator = MyEvaluator(labels)  
-            trainer = MyTrainer(config=cfg)
+            processor = DefaultProcessor(name=config.app_name)
+            repository = DefaultRepository()
+            handler = DefaultHandler(service)
             
             # Polymorphic execution - no branching
-            results = trainer.train(
-                classifier=classifier,
-                train_data=data_ctx.get_train_data(),
-                val_data=data_ctx.get_val_data(), 
-                collator=collator,
-                evaluator=evaluator,
-                epochs=cfg.epochs
-            )
+            if args.command == "run":
+                result = service.execute(data_ctx.get_data())
+            elif args.command == "process":
+                result = processor.process({"action": "batch_process"})
+            elif args.command == "status":
+                result = {"status": "running", "app": config.app_name}
             
-            return results
+            logger.info("application_complete", extra={"success": True})
+            return result
 ```
 
 ### Key Benefits Demonstrated
@@ -463,30 +705,35 @@ def run_training_simulation(args, cfg: RuntimeConfig):
 **Testability**: Each component can be mocked easily via interfaces
 ```python
 # Easy to test with mock implementations
-mock_classifier = MockClassifier(labels=["A", "B"])
-trainer = MyTrainer(config=test_config)
-result = trainer.train(mock_classifier, test_data, ...)
+mock_repository = MockRepository()
+mock_processor = MockProcessor()
+service = DefaultService(mock_repository, mock_processor)
+result = service.execute(test_data)
 ```
 
 **Maintainability**: Clear boundaries and explicit dependencies
 ```python
 # Easy to understand what each component needs
 @dataclass(frozen=True) 
-class MyTrainer(Trainer):
-    config: RuntimeConfig  # Only dependency needed
+class DefaultProcessor(Processor):
+    name: str           # Only static dependency needed
+    
+    def process(self, data: Any) -> Any:
+        return {"processed": True, "data": data, "processor": self.name}
 ```
 
 **Extensibility**: New implementations follow same patterns
 ```python
-# Add new classifier type without changing existing code
-class AdvancedClassifier(Classifier):
-    def classify(self, inputs): 
-        # New implementation
-        pass
+# Add new processor type without changing existing code
+class AdvancedProcessor(Processor):
+    def process(self, data: Any) -> Any:
+        # New implementation with advanced logic
+        return {"advanced_processed": True, "data": data}
 
 # Plug into existing system seamlessly  
-with AdvancedClassifierContext(...) as classifier:
-    trainer.train(classifier, ...)
+with ServiceContext(config) as service:
+    # Service automatically uses new processor type
+    result = service.execute(data)
 ```
 
 ---
@@ -509,14 +756,15 @@ with AdvancedClassifierContext(...) as classifier:
 ```python
 # Constructor injection (see Rule #1 for dataclass vs __init__ guidance)
 @dataclass(frozen=True)
-class MyService(Service):
+class DefaultService(Service):
     repository: Repository
     processor: Processor
     timeout: int
     
-    def execute(self, data: Any) -> Any:
-        processed = self.processor.process(data)
-        return self.repository.save(processed)
+    def execute(self, params: Any) -> Any:
+        processed = self.processor.process(params)
+        self.repository.save(processed)
+        return processed
 
 # Context-managed resources
 with ServiceContext(config) as service:
@@ -532,17 +780,17 @@ logger.info("operation_complete", extra={
 **❌ Anti-Patterns:**
 ```python
 # Runtime branching (avoid)
-def process(data, processor_type):
-    if processor_type == "fast":
-        return FastProcessor().process(data)
-    elif processor_type == "accurate": 
-        return AccurateProcessor().process(data)
+def handle_request(data, handler_type):
+    if handler_type == "fast":
+        return FastHandler().handle(data)
+    elif handler_type == "secure": 
+        return SecureHandler().handle(data)
 
 # Global configuration (avoid)
 GLOBAL_CONFIG = {...}
 
 def some_function(data):
-    device = GLOBAL_CONFIG["device"]  # Hidden dependency
+    timeout = GLOBAL_CONFIG["timeout"]  # Hidden dependency
 ```
 
 ### Performance Considerations
@@ -559,7 +807,7 @@ def some_function(data):
 def test_service():
     mock_repo = MockRepository()
     mock_processor = MockProcessor() 
-    service = MyService(mock_repo, mock_processor)
+    service = DefaultService(mock_repo, mock_processor, timeout=30)
     
     result = service.execute(test_data)
     
