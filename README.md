@@ -1,9 +1,13 @@
-# Class‑Centric, Go‑ish Plug‑and‑Play Python
-> A tiny reference skeleton showing how I design Python programs: **class contracts + constructor injection**, **no runtime branching**, **CLI as the single source of truth**, **context‑scoped resources**, **real logging**, and **DRY config**.
+# Go-ish Python: Patterns, Guidelines & Project Scaffolder
 
-This repo demonstrates the standard on a toy ML workflow (collate → classify → evaluate → train). The code should read like prose; the types and method names tell the story. Comments are optional because design is explicit.
+> **A comprehensive guide to writing maintainable, scalable Python code using Go-inspired patterns**
 
----
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+This repository demonstrates class-centric, plug-and-play Python design: **class contracts + constructor injection**, **no runtime branching**, **CLI as single source of truth**, **context-scoped resources**, **structured logging**, and **DRY config**.
+
+The code should read like prose—types and method names tell the story. Comments are optional because design is explicit.
 
 ## TL;DR (the rules I live by)
 
@@ -11,8 +15,19 @@ This repo demonstrates the standard on a toy ML workflow (collate → classify �
 - **Plug‑and‑play polymorphism > branching.** Choose the concrete class once (CLI/factory/context) and then call the common method. No `if/elif/else` ladders.
 - **One config to rule them all.** Build `RuntimeConfig` once at the top; pass it down. No config files. No hidden globals. No re‑detecting device in submodules.
 - **Context managers for lifecycle.** Heavy resources must be used with `with ...:`; construction and cleanup are explicit.
-- **Top‑level defaults only.** Deep helpers are positional and explicit; if you expose a default, it’s `None` and you canonicalize immediately.
+- **Top‑level defaults only.** Deep helpers are positional and explicit; if you expose a default, it's `None` and you canonicalize immediately.
 - **Logging over `print`.** Library code logs with context; CLI may print final user‑facing summaries.
+
+## Table of Contents
+
+- [Core Philosophy](#core-philosophy)
+- [Quick Start](#quick-start)
+- [The Rules](#the-rules)
+- [Architecture Guide](#architecture-guide)
+- [Project Scaffolder](#project-scaffolder)
+- [Repository Transformation](#repository-transformation)
+- [Detailed Examples](#detailed-examples)
+- [Checklist & Best Practices](#checklist--best-practices)
 
 ---
 
@@ -29,7 +44,19 @@ main.py        # Wiring: parse → config → contexts → collate/classify/eval
 
 ---
 
-## Architecture at a Glance
+## Core Philosophy
+
+This approach prioritizes **explicitness**, **composition**, and **predictable code paths** over clever abstractions. The code should read like prose—types and method names tell the story, comments become optional because design is explicit.
+
+### Why Go-ish Python?
+
+- **Maintainable**: Clear module boundaries and explicit dependencies
+- **Testable**: Interface-based design enables easy mocking
+- **Scalable**: Modular structure supports project growth
+- **Predictable**: No hidden state or surprising behavior
+- **Observable**: Built-in structured logging and monitoring
+
+### Architecture at a Glance
 
 ```
 CLI (args) ──▶ canonicalize_config() ──▶ RuntimeConfig
@@ -47,9 +74,24 @@ CLI (args) ──▶ canonicalize_config() ──▶ RuntimeConfig
 
 ---
 
-## Design Choices (why classes, not Protocols)
+## Quick Start
 
-- `Protocol` is nice for duck typing, but I want **constructors** to lock in static deps (`tokenizer`, `labels`, `device`). That makes call sites clean and prevents “parameter soup” on every call.
+### Generate a New Project
+
+```bash
+# Create a new CLI tool
+python3 scaffold.py my_tool --type cli_tool --author "Your Name"
+
+# Create an ML framework
+python3 scaffold.py ml_project --type ml_framework --description "ML Pipeline"
+
+# Minimal project (no logging/contexts)
+python3 scaffold.py simple_app --no-logging --no-context-managers
+```
+
+### Design Choices (why classes, not Protocols)
+
+- `Protocol` is nice for duck typing, but I want **constructors** to lock in static deps (`tokenizer`, `labels`, `device`). That makes call sites clean and prevents "parameter soup" on every call.
 - I use **ABCs** to document contracts when there are multiple implementations. The code remains pluggable without runtime type checks.
 
 ```python
@@ -63,162 +105,507 @@ class Evaluator(ABC):
     def evaluate(self, predictions: list[list[int]], targets: list[int]) -> "EvaluationResult": ...
 ```
 
----
+### Run the Example
 
-## Walkthrough (end‑to‑end)
-
-### 1) CLI → Config (single source of truth)
-```python
-# cli.py
-parser = build_parser()
-args = parser.parse_args()
-configure_logging(args.log_level)
-cfg = parse_args_to_config(args)  # canonicalize once
+```bash
+# Test the reference implementation
+python3 main.py train --model-name demo-classifier --data-size 50
 ```
 
+---
+
+## The Rules
+
+### Rule #1: Contracts as ABCs; implementations as small classes
+
+Static dependencies (tokenizer, labels, device, paths) go into `__init__`. Methods only take **dynamic input**.
+
+**When to use `@dataclass(frozen=True)` vs regular `__init__`:**
+- **Use `@dataclass(frozen=True)`** when all dependencies are **static** (passed in and never change)
+- **Use regular `__init__`** when you need **dynamic initialization** or dependencies that depend on other dependencies
+
 ```python
-# config.py
+# ✅ Good: Pure static deps → use dataclass
+@dataclass(frozen=True)
+class MyCollator(Collator):
+    tokenizer: MockTokenizer  # Static dependency
+    max_length: int          # Static configuration
+    
+    def collate(self, batch: list[dict]) -> dict[str, Any]:  # Dynamic input
+        return self.tokenizer.tokenize(batch, max_length=self.max_length)
+
+# ✅ Good: Dynamic initialization → use regular __init__
+class MyClassifier(Classifier):
+    def __init__(self, model_name: str, labels: list[str], config: RuntimeConfig):
+        self.model_name = model_name
+        self.labels = labels
+        self.config = config
+        # Dynamic initialization based on dependencies
+        self.tokenizer = self._load_tokenizer(model_name)  # Depends on model_name
+        self.model = self._load_model(model_name, len(labels))  # Depends on both
+    
+    def classify(self, input_ids: list[int]) -> int:  # Dynamic input only
+        return self.model.predict(input_ids)
+
+# ❌ Bad: Dependencies passed to every method call
+class BadCollator:
+    def collate(self, batch: list[dict], tokenizer, max_length) -> dict:
+        return tokenizer.tokenize(batch, max_length=max_length)
+```
+
+### Rule #2: Plug-and-play polymorphism over branching
+
+Choose the concrete class once (CLI/factory/context), then call the common method. No `if/elif/else` ladders.
+
+```python
+# ✅ Good: Polymorphic selection
+if args.task_type == "classifier":
+    context_mgr = ClassifierContext(model_name, labels, cfg)
+elif args.task_type == "sentiment":
+    context_mgr = SentimentContext(model_name, labels, cfg)
+
+with context_mgr as task:
+    result = task.run(data)  # Same interface, different behavior
+
+# ❌ Bad: Runtime branching everywhere
+def process_data(data, task_type, model_name, labels):
+    if task_type == "classifier":
+        # classifier logic here
+    elif task_type == "sentiment":
+        # sentiment logic here
+```
+
+### Rule #3: One config to rule them all
+
+Build `RuntimeConfig` once at the top; pass it down. No config files. No hidden globals. No re-detecting device in submodules.
+
+```python
+# ✅ Good: Single config source
 @dataclass(frozen=True)
 class RuntimeConfig:
     device: str
-    out_dir: str
-    log_level: str
-    seed: int | None = None
-    max_length: int = 128
-    epochs: int = 3
+    model_name: str
+    max_length: int
+    epochs: int
+
+def main():
+    cfg = parse_args_to_config(args)  # Build once
+    with ClassifierContext(cfg.model_name, labels, cfg) as classifier:
+        trainer = MyTrainer(config=cfg)  # Pass down
 ```
 
-### 2) Context‑scoped resources
+### Rule #4: Context managers for lifecycle
+
+Heavy resources must be used with `with ...:`; construction and cleanup are explicit.
+
 ```python
-# contexts.py
-with MyClassifierContext(args.model_name, labels, cfg) as classifier:
-    # classifier.model + classifier.tokenizer are ready
-    ...
+# ✅ Good: Explicit lifecycle management
+class ClassifierContext(AbstractContextManager):
+    def __enter__(self) -> MyClassifier:
+        self.classifier = MyClassifier(self.model_name, self.labels, self.cfg)
+        return self.classifier
+    
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+        self.classifier.cleanup()  # Explicit cleanup
+        return False
 ```
 
-### 3) Static deps in __init__, dynamic in methods
+### Rule #5: Logging over print
+
+Library code logs with context; CLI may print final user-facing summaries.
+
 ```python
-# core.py
+# ✅ Good: Structured logging with context
+logger.info("training_complete", extra={
+    "final_accuracy": accuracy,
+    "epochs": epochs,
+    "model": model_name
+})
+
+# CLI summary (user-facing)
+print(f"Training completed! Final accuracy: {accuracy:.3f}")
+```
+
+---
+
+## Architecture Guide
+
+### Project Structure
+
+```
+project_name/
+├── interfaces.py     # Abstract base classes (ABCs)
+├── core.py          # Concrete implementations
+├── contexts.py      # Context managers for resource lifecycle
+├── cli.py           # Command-line interface and argument parsing
+├── config.py        # Configuration management and canonicalization
+├── main.py          # Application orchestration and entry point
+├── README.md        # Documentation
+└── tests/           # Unit tests
+```
+
+### Module Responsibilities
+
+#### `interfaces.py` - Contracts Only
+
+```python
+from abc import ABC, abstractmethod
+
+class Processor(ABC):
+    @abstractmethod
+    def process(self, data: Any) -> Any:
+        pass
+
+class Service(ABC):
+    @abstractmethod
+    def execute(self, params: Any) -> Any:
+        pass
+```
+
+#### `core.py` - Business Logic
+
+```python
+from __future__ import annotations
+from typing import TYPE_CHECKING
+import logging
+
+if TYPE_CHECKING:
+    from config import RuntimeConfig
+
+from interfaces import Processor, Service
+
+logger = logging.getLogger(__name__)
+
 @dataclass(frozen=True)
-class MyCollator(Collator):
-    tokenizer: MockTokenizer       # static
-    max_length: int                # static
-
-    def collate(self, batch: list[dict]) -> dict[str, Any]:  # dynamic
-        texts = [x["text"] for x in batch]
-        out = self.tokenizer.tokenize(texts, max_length=self.max_length, truncation=True, padding=True)
-        out["labels"] = [x["label"] for x in batch]
-        return out
+class DefaultProcessor(Processor):
+    config: "RuntimeConfig"
+    name: str
+    
+    def process(self, data: Any) -> Any:
+        logger.info("processing_data", extra={"data_size": len(data), "processor": self.name})
+        return {"processed": True, "data": data}
 ```
+
+#### `contexts.py` - Resource Management
 
 ```python
-@dataclass(frozen=True)
-class MyEvaluator(Evaluator):
-    labels: list[str]              # static
-
-    def evaluate(self, predictions: list[list[int]], targets: list[int]) -> EvaluationResult:  # dynamic
-        # compute metrics, return a value object
-        return MyEvaluationResult(accuracy=..., total_samples=..., correct_predictions=...)
+class ServiceContext(AbstractContextManager):
+    def __init__(self, config: "RuntimeConfig"):
+        self.config = config
+        self.service: Service | None = None
+    
+    def __enter__(self) -> Service:
+        logger.info("initializing_service_context")
+        self.service = DefaultService(self.config)
+        return self.service
+    
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+        logger.info("releasing_service_resources")
+        if self.service:
+            self.service.cleanup()
+        return False
 ```
 
-### 4) Orchestration is high‑level and obvious
+### TYPE_CHECKING Pattern
+
+Consistent across all modules for clean imports:
+
 ```python
-# main.py
-with MyDataContext(train_data, val_data) as data_ctx:
-    with MyClassifierContext(args.model_name, labels, cfg) as classifier:
-        collator  = MyCollator(classifier.tokenizer, max_length=cfg.max_length)
-        evaluator = MyEvaluator(labels)
-        trainer   = MyTrainer(classifier=classifier, config=cfg)
+from __future__ import annotations
+from typing import TYPE_CHECKING
 
-        results = trainer.train(
-            train_data=data_ctx.get_train_data(),
-            val_data=data_ctx.get_val_data(),
-            collator=collator,
-            evaluator=evaluator,
-            epochs=cfg.epochs,
-        )
+if TYPE_CHECKING:
+    from config import RuntimeConfig    # Type-only imports
+    from other_module import SomeType
+
+from actual_module import real_function  # Runtime imports
 ```
 
-- No branching: the choice of concrete class happens **before** execution (by CLI + context + constructor).
-
 ---
 
-## Logging > print
+## Project Scaffolder
 
-- Every module uses `logger = logging.getLogger(__name__)`.
-- Logging calls include context via `extra={...}` (e.g., epoch, sizes, accuracy).
-- The CLI configures the root logger once (`configure_logging`).
-- The library layer doesn’t `print`; only the CLI may print final summaries for humans.
+The included `scaffold.py` generates new projects following all Go-ish patterns automatically.
 
-> In the demo, `MyEvaluationResult.visualize()` prints for simplicity. In production, prefer logging or return a structured object and let the caller decide how to render.
+### Features
 
----
+**Complete Project Generation**
+- Modular architecture with proper separation of concerns
+- TYPE_CHECKING compliance and forward references
+- Interface-based design with ABC contracts
+- Context manager support for resource lifecycle
+- Structured logging with consistent patterns
+- CLI integration with argument parsing
 
-## Extending the System (zero drama)
+**Flexible Configuration**
+- **Project Types**: ML framework, API server, CLI tool, data pipeline
+- **Optional Features**: Logging, CLI interface, context managers
+- **Customizable**: Author, description, target directory
 
-> New collator? New evaluator? New model? Follow this checklist.
-
-1. **Define/confirm the contract** in `interfaces.py` (usually already there).
-2. **Implement a class** binding static deps in `__init__` and exposing a tiny method:
-   - `Collator`: `__init__(tokenizer, max_length)` → `collate(batch)`  
-   - `Evaluator`: `__init__(labels)` → `evaluate(preds, targets)` → returns `EvaluationResult`
-   - `Classifier`: `__init__(model_name, labels, cfg)` → `classify(input_ids)`
-   - `Trainer`: `__init__(config)` → `train(classifier, train, val, collator, evaluator, epochs)`
-3. **Wire it** in `main.py` (or add a subcommand in `cli.py`). No runtime branching inside core logic.
-4. **Log context** at each major step (`start`, `complete`, `metrics`), no prints.
-5. **Keep config DRY**: do not re‑detect device/paths; use `RuntimeConfig`.
-
----
-
-## CLI Examples
+### Usage
 
 ```bash
-# run a training simulation
-python main.py train --model-name demo-model --epochs 3 --data-size 120 --log-level INFO
+# Basic project
+python3 scaffold.py my_project --type cli_tool
+
+# ML framework with full features
+python3 scaffold.py ml_framework --type ml_framework --author "ML Engineer" \
+  --description "Advanced ML pipeline with Go-ish patterns"
+
+# Minimal project
+python3 scaffold.py simple_tool --no-logging --no-context-managers
+
+# API server
+python3 scaffold.py my_api --type api_server --target-dir /path/to/projects
 ```
 
-You’ll see structured logs (and a brief human‑readable summary at the end).
+### Generated Project Features
+
+**Architecture**
+- Clean module boundaries (`interfaces` → `core` → `contexts` → `main`)
+- Proper dependency injection through constructors
+- Context managers for resource lifecycle
+- Configuration management with immutable objects
+
+**Development Ready**
+- `pyproject.toml` for modern Python packaging
+- `requirements.txt` for dependencies
+- `.gitignore` with comprehensive patterns
+- Test directory structure
+- Comprehensive README with usage examples
 
 ---
 
-## Testing the Contracts
+## Repository Transformation
 
-Test the **interfaces** so every implementation is held to the same bar.
+### AI Transformation Prompt
+
+Use the comprehensive transformation prompt with Claude, GPT-4, or similar AI:
+
+**Quick Access:**
+- Copy from: [`prompt.md`](./prompt.md)
+- Terminal: `make prompt` (copies to clipboard)
+- GitHub Pages: [Transformation Guide](https://yamaceay.github.io/my-py-style/prompt)
+
+The prompt includes detailed architecture requirements, implementation patterns, and a complete transformation checklist for converting existing Python projects to Go-ish patterns.
+
+### Manual Transformation Steps
+
+For manual transformation of existing codebases:
+
+1. **Analyze Current Structure**
+   ```bash
+   # Identify main components and their dependencies
+   find . -name "*.py" -exec grep -l "class\\|def\\|import" {} \;
+   ```
+
+2. **Extract Interfaces**
+   - Find all major classes that could have multiple implementations
+   - Create ABCs in `interfaces.py`
+   - Define minimal method signatures
+
+3. **Reorganize Implementation**
+   - Move concrete classes to `core.py`
+   - Apply constructor injection pattern
+   - Use `@dataclass(frozen=True)` for immutability
+
+4. **Add Context Managers**
+   - Identify resources that need lifecycle management
+   - Create context managers in `contexts.py`
+   - Ensure proper cleanup
+
+5. **Consolidate Configuration**
+   - Create single `RuntimeConfig` dataclass
+   - Build canonicalization functions
+   - Remove global variables and config files
+
+6. **Apply TYPE_CHECKING**
+   - Add proper import organization
+   - Use forward references for type hints
+   - Separate runtime vs type-only imports
+
+---
+
+## Detailed Examples
+
+### Example: ML Training Pipeline
+
+The reference implementation demonstrates a complete ML training workflow:
 
 ```python
-# tests/test_trainer_contract.py
-from interfaces import Trainer, Collator, Evaluator
+# Generated data → Context setup → Training loop → Evaluation
+def run_training_simulation(args, cfg: RuntimeConfig):
+    train_data, val_data = generate_simulation_data(args.data_size)
+    labels = ["positive", "negative", "neutral"]
+    
+    with MyDataContext(train_data, val_data) as data_ctx:
+        with MyClassifierContext(args.model_name, labels, cfg) as classifier:
+            # Components use constructor injection
+            collator = MyCollator(classifier.tokenizer, max_length=cfg.max_length)
+            evaluator = MyEvaluator(labels)  
+            trainer = MyTrainer(config=cfg)
+            
+            # Polymorphic execution - no branching
+            results = trainer.train(
+                classifier=classifier,
+                train_data=data_ctx.get_train_data(),
+                val_data=data_ctx.get_val_data(), 
+                collator=collator,
+                evaluator=evaluator,
+                epochs=cfg.epochs
+            )
+            
+            return results
+```
 
-def test_trainer_runs(trainer: Trainer, coll: Collator, eval_: Evaluator, data):
-    history = trainer.train(data["train"], data["val"], coll, eval_, epochs=2)
-    assert "final_accuracy" in history
+### Key Benefits Demonstrated
+
+**Testability**: Each component can be mocked easily via interfaces
+```python
+# Easy to test with mock implementations
+mock_classifier = MockClassifier(labels=["A", "B"])
+trainer = MyTrainer(config=test_config)
+result = trainer.train(mock_classifier, test_data, ...)
+```
+
+**Maintainability**: Clear boundaries and explicit dependencies
+```python
+# Easy to understand what each component needs
+@dataclass(frozen=True) 
+class MyTrainer(Trainer):
+    config: RuntimeConfig  # Only dependency needed
+```
+
+**Extensibility**: New implementations follow same patterns
+```python
+# Add new classifier type without changing existing code
+class AdvancedClassifier(Classifier):
+    def classify(self, inputs): 
+        # New implementation
+        pass
+
+# Plug into existing system seamlessly  
+with AdvancedClassifierContext(...) as classifier:
+    trainer.train(classifier, ...)
 ```
 
 ---
 
-## Why this works
+## Checklist & Best Practices
 
-- **Constructor injection** makes call sites minimal and obvious.
-- **ABCs + small classes** keep contracts crisp and pluggable.
-- **Contexts** make resource lifecycles explicit.
-- **One config** prevents drift and duplicate logic.
-- **No branching** means code paths are predictable and easy to refactor.
-- **Logging** gives you observability without littering the code with prints.
+### Architecture Checklist
+
+- [ ] **Static deps in `__init__`; methods accept only dynamic inputs**
+- [ ] **No `if/elif/else` dispatch in core logic—use classes and early selection**  
+- [ ] **Only CLI parses input; no config files or global state**
+- [ ] **One `RuntimeConfig` per run; no re-detecting device/paths**
+- [ ] **Library code logs; CLI prints final summaries**
+- [ ] **Context managers around heavy resources**
+- [ ] **Deep helpers are positional with no defaults**
+
+### Code Quality Guidelines
+
+**Good Patterns:**
+```python
+# Constructor injection (see Rule #1 for dataclass vs __init__ guidance)
+@dataclass(frozen=True)
+class MyService(Service):
+    repository: Repository
+    processor: Processor
+    timeout: int
+    
+    def execute(self, data: Any) -> Any:
+        processed = self.processor.process(data)
+        return self.repository.save(processed)
+
+# Context-managed resources
+with ServiceContext(config) as service:
+    result = service.execute(data)
+
+# Structured logging
+logger.info("operation_complete", extra={
+    "duration_ms": elapsed,
+    "records_processed": count
+})
+```
+
+**❌ Anti-Patterns:**
+```python
+# Runtime branching (avoid)
+def process(data, processor_type):
+    if processor_type == "fast":
+        return FastProcessor().process(data)
+    elif processor_type == "accurate": 
+        return AccurateProcessor().process(data)
+
+# Global configuration (avoid)
+GLOBAL_CONFIG = {...}
+
+def some_function(data):
+    device = GLOBAL_CONFIG["device"]  # Hidden dependency
+```
+
+### Performance Considerations
+
+- **Frozen dataclasses** are faster and safer than mutable ones
+- **Context managers** prevent resource leaks and improve memory usage
+- **Constructor injection** enables better caching and optimization
+- **Early polymorphic selection** avoids repeated branching overhead
+
+### Testing Strategy
+
+```python
+# Easy mocking with interfaces
+def test_service():
+    mock_repo = MockRepository()
+    mock_processor = MockProcessor() 
+    service = MyService(mock_repo, mock_processor)
+    
+    result = service.execute(test_data)
+    
+    assert mock_processor.process.called_with(test_data)
+    assert mock_repo.save.called_with(result)
+
+# Context manager testing
+def test_resource_lifecycle():
+    with ServiceContext(test_config) as service:
+        assert service is not None
+        result = service.execute(test_data)
+    
+    # Resource automatically cleaned up
+    assert service.is_closed()
+```
 
 ---
 
-## Guardrails (quick checklist)
+## Why This Approach Works
 
-- [ ] Static deps live in `__init__`; methods accept only dynamic inputs.
-- [ ] No `if/elif/else` dispatch inside core logic—use classes and early selection.
-- [ ] Only the CLI parses input; no config files.
-- [ ] One `RuntimeConfig` per run; no re‑detecting device/paths.
-- [ ] Library code logs; CLI can print a final summary.
-- [ ] Context managers around heavy resources.
-- [ ] Deep helpers are positional with no defaults.
+### Maintainability
+- **Explicit dependencies**: No hidden global state or surprise imports
+- **Clear boundaries**: Each module has a single, obvious responsibility  
+- **Predictable structure**: Same patterns across all projects
+
+### Testability
+- **Interface-based**: Easy mocking and dependency injection
+- **Isolated components**: Units can be tested independently
+- **Deterministic**: No hidden state means reproducible tests
+
+### Scalability
+- **Modular design**: Add new features without breaking existing code
+- **Pluggable architecture**: Swap implementations without changing consumers
+- **Resource management**: Proper cleanup prevents memory leaks
+
+### Developer Experience
+- **Self-documenting**: Code structure tells the story
+- **IDE-friendly**: Strong typing and clear interfaces
+- **Debugging**: Structured logging provides clear execution traces
 
 ---
 
 ## License
 
-MIT. Clean code, clean conscience.
+MIT License - Build great software, share knowledge freely.
+
+---
+
+*Created for maintainable, scalable Python development*

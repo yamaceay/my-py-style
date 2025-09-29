@@ -1,0 +1,25 @@
+name: github-pages
+title: Go-ish Python Patterns
+description: A comprehensive guide to writing maintainable, scalable Python code using Go-inspired patterns
+url: https://yamaceay.github.io/my-py-style
+
+plugins:
+  - jekyll-relative-links
+  - jekyll-optional-front-matter
+
+relative_links:
+  enabled: true
+  collections: true
+
+include:
+  - README.md
+  - prompt.md
+
+markdown: kramdown
+highlighter: rouge
+theme: minima
+
+kramdown:
+  input: GFM
+  hard_wrap: false
+  syntax_highlighter: rouge
