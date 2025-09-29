@@ -1,6 +1,40 @@
 # cli_project
 
-Test CLI program for Python
+CLI tool
+
+## Installation
+
+```bash
+# Install in development mode
+pip install -e .
+
+# Or install from requirements
+pip install -r requirements.txt
+```
+
+## Usage
+
+### As a Package
+```python
+from cli_project import DefaultService, AppConfig
+from cli_project import ServiceContext, DataContext
+
+# Create configuration
+config = AppConfig(
+    app_name="cli_project",
+    output_dir="./output",
+    verbose=True,
+    config_file=None
+)
+
+# Use context managers for resource management
+with ServiceContext(config) as service:
+    result = service.execute({"data": "example"})
+    print(result)
+```
+
+### Command Line Interface
+```bash\npython -m cli_project run --verbose\n# or\npython main.py run --verbose\n```
 
 ## Architecture
 
@@ -8,6 +42,7 @@ This project follows Go-ish Python patterns with clean modular organization:
 
 ### Modules
 
+- `__init__.py` - Package exports and public API
 - `interfaces.py` - Abstract base classes defining contracts
 - `core.py` - Concrete implementations of business logic
 - `contexts.py` - Context managers for resource lifecycle
@@ -23,16 +58,25 @@ This project follows Go-ish Python patterns with clean modular organization:
 - **Structured logging** with consistent extra fields
 - **TYPE_CHECKING** for clean forward references
 - **Composition over inheritance**
+- **Package-based imports** for clean API surface
 
-## Usage
+## API Reference
 
-```bash\npython main.py run --verbose\n```
+### Core Interfaces
+- `Processor` - Data processing contract
+- `Handler` - Request handling contract  
+- `Repository` - Data persistence contract
+- `Service` - Business logic execution contract
 
-## Installation
+### Implementations
+- `DefaultProcessor` - Basic data processor
+- `DefaultHandler` - Request handler with service delegation
+- `DefaultRepository` - In-memory storage implementation
+- `DefaultService` - Service orchestrating processor and repository
 
-```bash
-pip install -r requirements.txt
-```
+### Context Managers
+- `ServiceContext` - Manages service lifecycle and dependencies
+- `DataContext` - Manages data loading and cleanup
 
 ## Development
 

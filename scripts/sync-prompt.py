@@ -1,7 +1,32 @@
 #!/usr/bin/env python3
 """
-Documentation synchronization script for my-py-style repository.
+Documentation Synchronization Script for my-py-style Repository
+
+This script maintains consistency between prompt.md and README.md while
+creating GitHub Pages optimized versions for web access.
+
+Features:
+- Validates prompt.md and README.md accessibility
+- Creates docs/prompt.md with Jekyll front matter
+- Ensures UTF-8 encoding compliance
+- Provides status reporting and error handling
+
+Usage:
+    python scripts/sync-prompt.py
+    make sync-docs
+
+Auto-execution:
+    Runs automatically via GitHub Actions on file changes
+
+Modification Guidelines:
+- Update PROMPT_PATH/README_PATH for different source files
+- Modify Jekyll front matter in create_github_pages_version()
+- Add validation rules in validate_files()
+- Extend status reporting in main()
+
 Author: Yamaç Eren Ay (@yamaceay)
+Repository: https://github.com/yamaceay/my-py-style
+License: MIT
 """
 
 from pathlib import Path

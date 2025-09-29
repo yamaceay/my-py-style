@@ -1,12 +1,17 @@
 .PHONY: build prompt install show-prompt sync-docs
 
+%:
+	@:
+
 build:
-	@if [ -z "$(project)" ]; then \
+	@project_name="$(filter-out $@,$(MAKECMDGOALS))"; \
+	if [ -z "$$project_name" ]; then \
 		echo "Error: project name is required"; \
-		echo "Usage: make build project=<name> [type=<type>] [target_dir=<dir>] [author=<author>] [description=<desc>]"; \
+		echo "Usage: make build <project_name> [type=<type>] [target_dir=<dir>] [author=<author>] [description=<desc>]"; \
 		exit 1; \
-	fi
-	python3 scaffold.py $(project) \
+	fi; \
+	echo "Creating project '$$project_name'..."; \
+	python3 scaffold.py "$$project_name" \
 		$(if $(type),--type $(type)) \
 		$(if $(target_dir),--target-dir $(target_dir)) \
 		$(if $(author),--author "$(author)") \

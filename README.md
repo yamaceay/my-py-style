@@ -91,13 +91,13 @@ cd my-py-style
 **2. Create your first project using the Makefile**
 ```bash
 # Basic CLI tool project
-make build project=my_awesome_tool
+make build my_awesome_tool
 
 # API server with custom author
-make build project=my_api type=api_server author="Yamaç Eren Ay"
+make build my_api type=api_server author="Yamaç Eren Ay"
 
 # Data pipeline with description
-make build project=data_processor type=data_pipeline description="Advanced data processing pipeline"
+make build data_processor type=data_pipeline description="Advanced data processing pipeline"
 ```
 
 **3. Navigate to your new project and test it**
@@ -115,25 +115,22 @@ Generate new projects with Go-ish Python patterns:
 
 ```bash
 # Required parameter
-make build project=<project_name>
+make build <project_name>
 
 # Optional parameters
-make build project=my_app type=cli_tool              # Project type
-make build project=my_app author="Jane Doe"           # Author name
-make build project=my_app description="My awesome app" # Description
-make build project=my_app target_dir=/path/to/dir     # Custom target directory
+make build my_app type=cli_tool              # Project type
+make build my_app author="Jane Doe"           # Author name
+make build my_app description="My awesome app" # Description
+make build my_app target_dir=/path/to/dir     # Custom target directory
 
 # Feature flags
-make build project=simple_app no_logging=1           # Disable logging
-make build project=simple_app no_cli=1               # Disable CLI
-make build project=simple_app no_context_managers=1  # Disable contexts
+make build simple_app no_logging=1           # Disable logging
+make build simple_app no_cli=1               # Disable CLI
+make build simple_app no_context_managers=1  # Disable contexts
 ```
 
 **Project types available:**
 - `cli_tool` (default) - Command-line applications
-- `api_server` - REST API servers
-- `data_pipeline` - Data processing workflows
-- `ml_framework` - Machine learning applications
 
 #### `make install` - Development Setup
 Installs GitHub CLI and Copilot CLI extension for AI assistance:
@@ -413,7 +410,7 @@ The included scaffolder generates complete, production-ready projects following 
 
 ```bash
 # Generate a CLI tool project
-make build project=task_manager type=cli_tool author="Yamaç Eren Ay"
+make build task_manager type=cli_tool author="Yamaç Eren Ay"
 cd task_manager
 
 # Explore the generated structure
@@ -431,7 +428,7 @@ python main.py run --verbose
 
 ```bash
 # Generate an API server project
-make build project=user_api type=api_server description="User management API"
+make build user_api type=api_server description="User management API"
 cd user_api
 
 # The generated structure includes API-specific components
@@ -442,7 +439,7 @@ python main.py process --output-dir ./api_output
 
 ```bash
 # Generate a data processing pipeline
-make build project=log_processor type=data_pipeline \
+make build log_processor type=data_pipeline \
   author="Data Team" description="Log analysis pipeline"
 cd log_processor
 
@@ -454,7 +451,7 @@ python main.py run --verbose --output-dir ./processed_logs
 
 ```bash
 # Generate minimal project without logging/contexts
-make build project=simple_calc no_logging=1 no_context_managers=1
+make build simple_calc no_logging=1 no_context_managers=1
 cd simple_calc
 
 # Check the simpler structure
@@ -543,9 +540,6 @@ class ServiceContext(AbstractContextManager[DefaultService]):
 Each type generates appropriate components:
 
 - **`cli_tool`** (default): Command-line applications with argument parsing
-- **`api_server`**: REST API structure with request handling
-- **`data_pipeline`**: Data processing workflows with batch operations  
-- **`ml_framework`**: Machine learning applications with model management
 
 #### Feature Flags
 
@@ -553,12 +547,12 @@ Control generated features:
 
 ```bash
 # Disable specific features
-make build project=minimal_app no_logging=1      # No structured logging
-make build project=simple_app no_cli=1           # No argument parsing
-make build project=basic_app no_context_managers=1  # No resource management
+make build minimal_app no_logging=1      # No structured logging
+make build simple_app no_cli=1           # No argument parsing
+make build basic_app no_context_managers=1  # No resource management
 
 # Combine flags
-make build project=bare_app no_logging=1 no_cli=1 no_context_managers=1
+make build bare_app no_logging=1 no_cli=1 no_context_managers=1
 ```
 
 #### Development Ready Features
@@ -578,19 +572,19 @@ Every project includes:
 
 ```bash
 # Generate in specific directory
-make build project=my_app target_dir=/path/to/workspace
+make build my_app target_dir=/path/to/workspace
 
 # Organize multiple projects
 mkdir -p ~/projects/go-ish-python
-make build project=project1 target_dir=~/projects/go-ish-python
-make build project=project2 target_dir=~/projects/go-ish-python
+make build project1 target_dir=~/projects/go-ish-python
+make build project2 target_dir=~/projects/go-ish-python
 ```
 
 #### Development Workflow
 
 ```bash
 # 1. Generate project
-make build project=analytics_tool type=data_pipeline
+make build analytics_tool type=data_pipeline
 
 # 2. Set up development environment
 cd analytics_tool
@@ -609,7 +603,7 @@ python main.py run --verbose
 
 ```bash
 # Generate project for AI transformation
-make build project=legacy_converter type=cli_tool
+make build legacy_converter type=cli_tool
 
 # Get transformation prompt
 make prompt
