@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Documentation Synchronization Script for my-py-style Repository
+Documentation Synchronization Script for py-kit Repository
 
 This script maintains consistency between prompt.md and README.md while
 creating GitHub Pages optimized versions for web access.
@@ -25,7 +25,7 @@ Modification Guidelines:
 - Extend status reporting in main()
 
 Author: Yamaç Eren Ay (@yamaceay)
-Repository: https://github.com/yamaceay/my-py-style
+Repository: https://github.com/yamaceay/py-kit
 License: MIT
 """
 
@@ -99,7 +99,7 @@ This prompt can be used with Claude, GPT-4, or any AI assistant to transform Pyt
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Sync prompt.md and README.md transformation sections")
-    parser.add_argument("--url", type=str, default="https://yamaceay.github.io/my-py-style/", help="Base URL for GitHub Pages links")
+    parser.add_argument("--url", type=str, default="https://yamaceay.github.io/py-kit/", help="Base URL for GitHub Pages links")
     args = parser.parse_args()
 
     success = sync_prompt_files()

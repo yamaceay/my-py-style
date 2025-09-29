@@ -59,7 +59,7 @@ prompt: show-prompt
 	@echo "   • Cursor IDE"
 	@echo ""
 	@echo "🔗 The prompt has been displayed above - just copy and paste it!"
-	@echo "📖 Or view it online: https://yamaceay.github.io/my-py-style/prompt"
+	@echo "📖 Or view it online: https://yamaceay.github.io/py-kit/prompt"
 	@echo ""
 	@read -p "Press Enter to copy prompt to clipboard (macOS)..." && \
 	if command -v pbcopy >/dev/null 2>&1; then \

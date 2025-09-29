@@ -5,7 +5,7 @@ title: Go-ish Python Patterns
 author: Yamaç Eren Ay
 github_username: yamaceay
 description: A comprehensive guide to writing maintainable, scalable Python code using Go-inspired patterns
-url: https://yamaceay.github.io/my-py-style
+url: https://yamaceay.github.io/py-kit
 
 plugins:
   - jekyll-relative-links

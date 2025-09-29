@@ -84,8 +84,8 @@ CLI (args) ──▶ create_config() ──▶ AppConfig
 
 **1. Clone this repository**
 ```bash
-git clone https://github.com/yamaceay/my-py-style.git
-cd my-py-style
+git clone https://github.com/yamaceay/py-kit.git
+cd py-kit
 ```
 
 **2. Create your first project using the Makefile**
@@ -623,7 +623,7 @@ Use the comprehensive transformation prompt with Claude, GPT-4, or similar AI:
 **Quick Access:**
 - Copy from: [`prompt.md`](./prompt.md)
 - Terminal: `make prompt` (copies to clipboard)
-- GitHub Pages: [Transformation Guide](https://yamaceay.github.io/my-py-style/prompt)
+- GitHub Pages: [Transformation Guide](https://yamaceay.github.io/py-kit/prompt)
 
 The prompt includes detailed architecture requirements, implementation patterns, and a complete transformation checklist for converting existing Python projects to Go-ish patterns.
 

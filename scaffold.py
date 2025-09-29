@@ -30,7 +30,7 @@ Modification Guidelines:
 - Extend CLI options in main() argument parser
 
 Author: Yamaç Eren Ay (@yamaceay)
-Repository: https://github.com/yamaceay/my-py-style
+Repository: https://github.com/yamaceay/py-kit
 License: MIT
 """
 

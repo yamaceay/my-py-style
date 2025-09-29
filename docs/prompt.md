@@ -225,5 +225,5 @@ Transform the codebase while preserving all functionality. The result should be 
 ## Quick Actions
 
 - [📋 Copy this prompt](javascript:navigator.clipboard.writeText(document.querySelector('pre').textContent))
-- [🔙 Back to main guide](https://yamaceay.github.io/my-py-style/)
-- [📁 View repository](https://yamaceay.github.io/my-py-style/)
+- [🔙 Back to main guide](https://yamaceay.github.io/py-kit/)
+- [📁 View repository](https://yamaceay.github.io/py-kit/)
