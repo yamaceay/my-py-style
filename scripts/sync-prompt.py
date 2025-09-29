@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Synchronization script to keep prompt.md and README.md transformation sections in sync.
+Documentation synchronization script for my-py-style repository.
+Author: Yamaç Eren Ay (@yamaceay)
 """
 
 from pathlib import Path

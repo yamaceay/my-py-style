@@ -1,5 +1,9 @@
+# Jekyll configuration for GitHub Pages
+# Author: Yamaç Eren Ay (@yamaceay)
 name: github-pages
 title: Go-ish Python Patterns
+author: Yamaç Eren Ay
+github_username: yamaceay
 description: A comprehensive guide to writing maintainable, scalable Python code using Go-inspired patterns
 url: https://yamaceay.github.io/my-py-style
 

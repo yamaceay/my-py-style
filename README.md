@@ -94,7 +94,7 @@ cd my-py-style
 make build project=my_awesome_tool
 
 # API server with custom author
-make build project=my_api type=api_server author="Your Name"
+make build project=my_api type=api_server author="Yamaç Eren Ay"
 
 # Data pipeline with description
 make build project=data_processor type=data_pipeline description="Advanced data processing pipeline"
@@ -413,7 +413,7 @@ The included scaffolder generates complete, production-ready projects following 
 
 ```bash
 # Generate a CLI tool project
-make build project=task_manager type=cli_tool author="Your Name"
+make build project=task_manager type=cli_tool author="Yamaç Eren Ay"
 cd task_manager
 
 # Explore the generated structure
@@ -856,4 +856,4 @@ MIT License - Build great software, share knowledge freely.
 
 ---
 
-*Created for maintainable, scalable Python development*
+*Created by Yamaç Eren Ay ([@yamaceay](https://github.com/yamaceay)) for maintainable, scalable Python development*

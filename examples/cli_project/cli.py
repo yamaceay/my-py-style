@@ -11,8 +11,8 @@ from config import create_config
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="cli-project",
-        description="CLI tool for testing scaffolding"
+        prog="cli_project",
+        description="Test CLI program for Python"
     )
     
     parser.add_argument(
@@ -55,7 +55,7 @@ def validate_args(args: argparse.Namespace) -> None:
 
 def parse_args_to_config(args: argparse.Namespace) -> "AppConfig":
     return create_config(
-        app_name="cli-project",
+        app_name="cli_project",
         output_dir=args.output_dir,
         verbose=args.verbose,
         config_file=args.config_file

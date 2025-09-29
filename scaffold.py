@@ -480,6 +480,9 @@ pip install -r requirements.txt
 Created with Python Project Scaffolder following Go-ish Python guidelines.
 
 Author: {self.config.author}
+
+---
+*Generated with Go-ish Python Scaffolder by Yamaç Eren Ay (@yamaceay)*
 '''
     
     def _get_gitignore_template(self) -> str:
@@ -542,7 +545,7 @@ name = "{self.config.project_name}"
 version = "0.1.0"
 description = "{self.config.description}"
 authors = [
-    {{name = "{self.config.author}"}}
+    {{name = "{self.config.author}", email = "yamaceay@users.noreply.github.com"}}
 ]
 readme = "README.md"
 requires-python = ">=3.9"
@@ -581,7 +584,7 @@ def main() -> None:
                        default="cli_tool", help="Type of project to create")
     parser.add_argument("--target-dir", type=Path, default=Path.cwd(), 
                        help="Target directory to create project in")
-    parser.add_argument("--author", default="Unknown Author", help="Project author name")
+    parser.add_argument("--author", default="Yamaç Eren Ay", help="Project author name")
     parser.add_argument("--description", default="A Go-ish Python project", 
                        help="Project description")
     parser.add_argument("--no-logging", action="store_true", help="Disable logging setup")

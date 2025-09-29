@@ -3,11 +3,11 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cli-project"
+name = "cli_project"
 version = "0.1.0"
-description = "CLI tool for testing scaffolding"
+description = "Test CLI program for Python"
 authors = [
-    {name = "Yamaç Eren Ay"}
+    {name = "Yamaç Eren Ay", email = "yamaceay@users.noreply.github.com"}
 ]
 readme = "README.md"
 requires-python = ">=3.9"
@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.scripts]
-cli-project = "cli-project.main:main"
+cli_project = "cli_project.main:main"
 
 [tool.black]
 line-length = 88

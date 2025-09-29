@@ -1,4 +1,5 @@
-name: Synchronize Documentation
+name: Sync Documentation
+# Author: Yamaç Eren Ay (@yamaceay)
 
 on:
   push:

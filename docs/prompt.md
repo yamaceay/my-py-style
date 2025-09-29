@@ -15,7 +15,7 @@ This prompt can be used with Claude, GPT-4, or any AI assistant to transform Pyt
 
 ---
 
-Transform this Python codebase to follow Go-ish Python patterns. Apply these specific guidelines:
+You are an expert Python developer tasked with transforming a Python codebase to follow "Go-ish Python" patterns developed by Yamaç Eren Ay (@yamaceay). Apply these specific guidelines:
 
 ## ARCHITECTURE REQUIREMENTS
 

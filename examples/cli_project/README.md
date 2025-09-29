@@ -1,6 +1,6 @@
-# cli-project
+# cli_project
 
-CLI tool for testing scaffolding
+Test CLI program for Python
 
 ## Architecture
 
@@ -39,3 +39,6 @@ pip install -r requirements.txt
 Created with Python Project Scaffolder following Go-ish Python guidelines.
 
 Author: Yamaç Eren Ay
+
+---
+*Generated with Go-ish Python Scaffolder by Yamaç Eren Ay (@yamaceay)*
