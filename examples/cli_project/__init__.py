@@ -2,7 +2,7 @@
 """
 Cli Project Package
 
-CLI tool
+CLI Tool
 
 This package follows Go-ish Python patterns with clean modular organization.
 
@@ -22,7 +22,7 @@ from __future__ import annotations
 # Package metadata
 __version__ = "0.1.0"
 __author__ = "Yamaç Eren Ay"
-__description__ = "CLI tool"
+__description__ = "CLI Tool"
 
 # Core interfaces
 from .interfaces import Processor, Handler, Repository, Service

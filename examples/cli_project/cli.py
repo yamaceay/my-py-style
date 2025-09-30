@@ -35,7 +35,7 @@ def build_parser() -> argparse.ArgumentParser:
     """Build and configure the argument parser."""
     parser = argparse.ArgumentParser(
         prog="cli_project",
-        description="CLI tool"
+        description="CLI Tool"
     )
     
     parser.add_argument(

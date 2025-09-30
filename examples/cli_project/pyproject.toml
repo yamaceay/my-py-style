@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cli_project"
 version = "0.1.0"
-description = "CLI tool"
+description = "CLI Tool"
 authors = [
     {name = "Yamaç Eren Ay", email = "yamaceay@users.noreply.github.com"}
 ]

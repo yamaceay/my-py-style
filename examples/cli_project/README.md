@@ -1,6 +1,6 @@
 # cli_project
 
-CLI tool
+CLI Tool
 
 ## Installation
 
